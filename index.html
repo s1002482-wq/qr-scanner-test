@@ -1,0 +1,219 @@
+
+
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+  <meta name="viewport"
+
+        content="width=device-width, initial-scale=1">
+
+  <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
+
+  <style>
+
+    body {
+
+      font-family: Arial, sans-serif;
+
+      padding: 20px;
+
+      background: #f4f5f7;
+
+    }
+
+    video {
+
+      width: 100%;
+
+      max-width: 500px;
+
+      background: black;
+
+      border-radius: 12px;
+
+    }
+
+    button {
+
+      padding: 14px 24px;
+
+      margin: 8px 0;
+
+      font-size: 16px;
+
+    }
+
+    #result {
+
+      font-size: 28px;
+
+      font-weight: bold;
+
+      color: green;
+
+    }
+
+    #log {
+
+      background: white;
+
+      padding: 15px;
+
+      white-space: pre-wrap;
+
+      border-radius: 8px;
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <h2>QR Code Scanner Test</h2>
+
+  <button onclick="startScan()">開啟相機</button>
+
+  <button onclick="stopScan()">停止掃描</button>
+
+  <br>
+
+  <video id="video" autoplay muted playsinline></video>
+
+  <h3>辨識結果</h3>
+
+  <div id="result">等待掃描</div>
+
+  <h3>除錯訊息</h3>
+
+  <div id="log"></div>
+
+  <script>
+
+    let reader;
+
+    let count = 0;
+
+    function log(message) {
+
+      document.getElementById('log').textContent
+
+        += message + '\n';
+
+    }
+
+    if (typeof ZXing !== 'undefined') {
+
+      log('OK：ZXing 函式庫載入成功');
+
+    } else {
+
+      log('ERROR：ZXing 函式庫載入失敗');
+
+    }
+
+    async function startScan() {
+
+      try {
+
+        if (reader) reader.reset();
+
+        count = 0;
+
+        document.getElementById('result').textContent
+
+          = '等待掃描';
+
+        reader = new ZXing.BrowserQRCodeReader();
+
+        log('OK：辨識引擎初始化成功');
+
+        const devices = await reader.listVideoInputDevices();
+
+        log('偵測到鏡頭數量：' + devices.length);
+
+        devices.forEach(device => {
+
+          log('鏡頭：' + device.label);
+
+        });
+
+        const constraints = {
+
+          audio: false,
+
+          video: {
+
+            facingMode: { ideal: 'environment' }
+
+          }
+
+        };
+
+        log('正在啟動相機...');
+
+        await reader.decodeFromConstraints(
+
+          constraints,
+
+          'video',
+
+          (result, error) => {
+
+            count++;
+
+            if (count === 1) {
+
+              log('OK：辨識引擎開始處理影像');
+
+            }
+
+            if (result) {
+
+              document.getElementById('result').textContent
+
+                = result.getText();
+
+              log('SUCCESS：' + result.getText());
+
+              reader.reset();
+
+            }
+
+            if (error &&
+
+                !(error instanceof ZXing.NotFoundException)) {
+
+              log('辨識訊息：' + error.message);
+
+            }
+
+          }
+
+        );
+
+      } catch (error) {
+
+        log('ERROR：' + error.message);
+
+      }
+
+    }
+
+    function stopScan() {
+
+      if (reader) reader.reset();
+
+      log('掃描已停止');
+
+    }
+
+  </script>
+
+</body>
+
+</html>
